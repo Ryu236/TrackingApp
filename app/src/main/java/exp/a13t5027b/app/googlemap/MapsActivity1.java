@@ -1,35 +1,27 @@
 package exp.a13t5027b.app.googlemap;
 
-import android.support.v4.app.ActivityCompat;
-import android.os.Bundle;
-import android.content.pm.PackageManager;
 import android.Manifest;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.annotation.NonNull;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
-import android.location.Location;
-
-//import com.google.android.gms.drive.Permission;
-//import com.google.android.gms.drive.internal.StringListResponse;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-//import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.GoogleMap.OnMyLocationButtonClickListener;
-
-import com.google.android.gms.maps.model.MarkerOptions;
+import com.nifty.cloud.mb.core.DoneCallback;
 import com.nifty.cloud.mb.core.NCMB;
-import com.nifty.cloud.mb.core.NCMBObject;
 import com.nifty.cloud.mb.core.NCMBException;
-import com.nifty.cloud.mb.core.NCMBQuery;
-import com.nifty.cloud.mb.core.FindCallback;
-
-import java.util.List;
+import com.nifty.cloud.mb.core.NCMBUser;
 
 //経路検索
 //import android.content.Intent;
@@ -49,19 +41,58 @@ public class MapsActivity1 extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        setContentView(R.layout.activity_maps1);
         //経路検索
         // test0();
 
-        // mBaaSの初期化 APIキーの設定
-        NCMB.initialize(this.getApplicationContext(),"2ec74409180bbf60ac01acbf23e2198ab84118da7415c7c587b02ec7d7b8cf5a","0c8707e959d5c3e91020cadc8d99bfb1801b5c0d1585dd0894365333fe82c56d");
+        /** NCMBの初期化 APIキーの設定 */
+        NCMB.initialize(this,"2ec74409180bbf60ac01acbf23e2198ab84118da7415c7c587b02ec7d7b8cf5a","0c8707e959d5c3e91020cadc8d99bfb1801b5c0d1585dd0894365333fe82c56d");
 
-        setContentView(R.layout.activity_maps1);
+        /** Login action */
+        Intent intent = new Intent(this, LoginActivity.class);
+        startActivity(intent);
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-//        mMap.setMyLocationEnabled(true);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
+            return true;
+        }
+
+        if (id == R.id.action_logout) {
+            NCMBUser.logoutInBackground(new DoneCallback() {
+                @Override
+                public void done(NCMBException e) {
+                    if (e != null) {
+                        //エラー時の処理
+                        Log.e("Logout", "Logout missed. error :" + e.getMessage());
+                    }
+                }
+            });
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
 
@@ -69,37 +100,38 @@ public class MapsActivity1 extends AppCompatActivity
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // データストアからデータの取得
-        // クラスの選択
-        NCMBQuery<NCMBObject> query = new NCMBQuery<>("Location");
+        /** データストアからデータの取得 */
+//        // クラスの選択
+//        NCMBQuery<NCMBObject> query = new NCMBQuery<>("Location");
+//
+//        // データストアの検索
+//        query.findInBackground(new FindCallback<NCMBObject>() {
+//            @Override
+//            public void done(List<NCMBObject> results, NCMBException e) {
+//                if (e != null) {
+//                    // error ログによる表示
+//                    Log.e("NCMB", "検索に失敗しました。エラー:" + e.getMessage());
+//                } else {
+//                    // success ログによる表示
+//                    Log.i("NCMB", "検索に成功しました。");
+//
+//                    // for文による検索結果の処理(results)
+//                    for (int i = 0, n = results.size(); i < n; i++) {
+//                        NCMBObject o = results.get(i);
+//                        Log.i(TAG, o.getString("name")); // ログの表示
+//                        String name = o.getString("name"); // nameフィールドの取得
+//                        Location geo = o.getGeolocation("geo"); // geoフィールドの取得
+//
+//                        // マーカーの設置
+//                        LatLng marker = new LatLng(geo.getLatitude(),geo.getLongitude()); // 緯度経度のオブジェクト
+//                        mMap.addMarker(new MarkerOptions()
+//                            .position(marker)
+//                            .title(name));
+//                    }
+//                }
+//            }
+//        });
 
-        // データストアの検索
-        query.findInBackground(new FindCallback<NCMBObject>() {
-            @Override
-            public void done(List<NCMBObject> results, NCMBException e) {
-                if (e != null) {
-                    // error
-                    Log.e("NCMB", "検索に失敗しました。エラー:" + e.getMessage());
-                } else {
-                    // success
-                    Log.i("NCMB", "検索に成功しました。");
-
-                    // for文による検索結果の処理(results)
-                    for (int i = 0, n = results.size(); i < n; i++) {
-                        NCMBObject o = results.get(i);
-                        Log.i("NCMB", o.getString("name"));
-                        String name = o.getString("name");
-                        Location geo = o.getGeolocation("geo");
-
-                        // マーカーの設置
-                        LatLng marker = new LatLng(geo.getLatitude(),geo.getLongitude()); // 緯度経度のオブジェクト
-                        mMap.addMarker(new MarkerOptions()
-                            .position(marker)
-                            .title(name));
-                    }
-                }
-            }
-        });
         /**
         * // Move the camera at Shinshu University.
         * LatLng shinshuU = new LatLng(36.6308777,138.189517);
@@ -107,6 +139,7 @@ public class MapsActivity1 extends AppCompatActivity
         *  //    .position(shinshuU)
         * //    .title("信州大学工学部"));
          */
+        // Move the camera at Shinshu University.
         LatLng shinshuU = new LatLng(36.6308777,138.189517);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(shinshuU));
 
