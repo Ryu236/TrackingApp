@@ -9,6 +9,7 @@ package exp.a13t5027b.app.googlemap;
 
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -107,6 +108,8 @@ public class SignupActivity extends AppCompatActivity {
 
     public void onSignupSuccess() {
         _signupButton.setEnabled(true);
+        Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
+        intent.putExtra("username", _nameText.getText().toString());
         setResult(RESULT_OK, null);
         finish();
     }
