@@ -1,8 +1,16 @@
+/*
+ * Created by Ryutaro Kobayashi
+ * Copyright (c) 2016. All rights reserved.
+ *
+ * Last modified 16/12/18 14:07
+ */
+
 package exp.a13t5027b.app.googlemap;
 
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -18,14 +26,17 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.nifty.cloud.mb.core.DoneCallback;
+import com.nifty.cloud.mb.core.FindCallback;
 import com.nifty.cloud.mb.core.NCMB;
 import com.nifty.cloud.mb.core.NCMBException;
+import com.nifty.cloud.mb.core.NCMBObject;
+import com.nifty.cloud.mb.core.NCMBQuery;
 import com.nifty.cloud.mb.core.NCMBUser;
 
-//経路検索
-//import android.content.Intent;
-//import android.net.Uri;
+import java.util.List;
+
 
 public class MapsActivity1 extends AppCompatActivity
         implements OnMapReadyCallback,
@@ -89,6 +100,7 @@ public class MapsActivity1 extends AppCompatActivity
             });
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
+            Toast.makeText(getApplicationContext(), "Logout", Toast.LENGTH_SHORT).show();
             return true;
         }
 
@@ -101,44 +113,38 @@ public class MapsActivity1 extends AppCompatActivity
         mMap = googleMap;
 
         /** データストアからデータの取得 */
-//        // クラスの選択
-//        NCMBQuery<NCMBObject> query = new NCMBQuery<>("Location");
-//
-//        // データストアの検索
-//        query.findInBackground(new FindCallback<NCMBObject>() {
-//            @Override
-//            public void done(List<NCMBObject> results, NCMBException e) {
-//                if (e != null) {
-//                    // error ログによる表示
-//                    Log.e("NCMB", "検索に失敗しました。エラー:" + e.getMessage());
-//                } else {
-//                    // success ログによる表示
-//                    Log.i("NCMB", "検索に成功しました。");
-//
-//                    // for文による検索結果の処理(results)
-//                    for (int i = 0, n = results.size(); i < n; i++) {
-//                        NCMBObject o = results.get(i);
-//                        Log.i(TAG, o.getString("name")); // ログの表示
-//                        String name = o.getString("name"); // nameフィールドの取得
-//                        Location geo = o.getGeolocation("geo"); // geoフィールドの取得
-//
-//                        // マーカーの設置
-//                        LatLng marker = new LatLng(geo.getLatitude(),geo.getLongitude()); // 緯度経度のオブジェクト
-//                        mMap.addMarker(new MarkerOptions()
-//                            .position(marker)
-//                            .title(name));
-//                    }
-//                }
-//            }
-//        });
+        // クラスの選択
+        NCMBQuery<NCMBObject> query = new NCMBQuery<>("Location");
 
-        /**
-        * // Move the camera at Shinshu University.
-        * LatLng shinshuU = new LatLng(36.6308777,138.189517);
-        * //mMap.addMarker(new MarkerOptions()
-        *  //    .position(shinshuU)
-        * //    .title("信州大学工学部"));
-         */
+        // データストアの検索
+        query.findInBackground(new FindCallback<NCMBObject>() {
+            @Override
+            public void done(List<NCMBObject> results, NCMBException e) {
+                if (e != null) {
+                    // error ログによる表示
+                    Log.e("NCMB", "検索に失敗しました。エラー:" + e.getMessage());
+                } else {
+                    // success ログによる表示
+                    Log.i("NCMB", "検索に成功しました。");
+
+                    // for文による検索結果の処理(results)
+                    for (int i = 0, n = results.size(); i < n; i++) {
+                        NCMBObject o = results.get(i);
+                        Log.i(TAG, o.getString("name")); // ログの表示
+                        String name = o.getString("name"); // nameフィールドの取得
+                        Location geo = o.getGeolocation("geo"); // geoフィールドの取得
+
+                        // マーカーの設置
+                        LatLng marker = new LatLng(geo.getLatitude(),geo.getLongitude()); // 緯度経度のオブジェクト
+                        mMap.addMarker(new MarkerOptions()
+                            .position(marker)
+                            .title(name));
+                    }
+                }
+            }
+        });
+
+
         // Move the camera at Shinshu University.
         LatLng shinshuU = new LatLng(36.6308777,138.189517);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(shinshuU));
@@ -201,22 +207,5 @@ public class MapsActivity1 extends AppCompatActivity
     private void showMiddingPermissionError() {
         PermissionUtils.PermissionDeniedDialog.newInstance(true).show(getSupportFragmentManager(), "dialog");
     }
-
-
-
-    //地名を入れて経路を検索
-//    private void test0(){
-//        String start = "信州大学工学部";
-//        String destination = "前橋ナップス";
-//
-//        //車:d
-//        String dir = "d";
-//
-//        Intent intent = new Intent();
-//        intent.setAction(Intent.ACTION_VIEW);
-//        intent.setClassName("com.google.android.apps.maps","com.google.android.maps.MapsActivity");
-//        intent.setData(Uri.parse("http://maps.google.com/maps?saddr="+start+"&daddr="+destination+"&dirflg="+dir));
-//        startActivity(intent);
-//    }
 
 } /** End */

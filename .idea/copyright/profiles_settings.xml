@@ -1,3 +1,7 @@
 <component name="CopyrightManager">
-  <settings default="Ryutaro Kobayashi" />
+  <settings default="Ryutaro Kobayashi">
+    <module2copyright>
+      <element module="All" copyright="Ryutaro Kobayashi" />
+    </module2copyright>
+  </settings>
 </component>
