@@ -47,6 +47,7 @@ public class MapsActivity1 extends AppCompatActivity
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private boolean mPermissionDenied = false;
     private GoogleMap mMap;
+    private static final int REQUEST_LOGIN = 0;
 
 
     @Override
@@ -61,7 +62,7 @@ public class MapsActivity1 extends AppCompatActivity
 
         /** Login action */
         Intent intent = new Intent(this, LoginActivity.class);
-        startActivity(intent);
+        startActivityForResult(intent, REQUEST_LOGIN);
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -100,11 +101,28 @@ public class MapsActivity1 extends AppCompatActivity
             });
             Toast.makeText(getApplicationContext(), "Logout", Toast.LENGTH_SHORT).show();
             Intent intent = new Intent(this, LoginActivity.class);
-            startActivity(intent);
+            startActivityForResult(intent, REQUEST_LOGIN);
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_LOGIN) {
+            if (resultCode == RESULT_OK) {
+                // Get Username
+                String Username = data.getStringExtra("Username");
+                Toast.makeText(getApplicationContext(), "Welcome " + Username, Toast.LENGTH_SHORT).show();
+                Log.i("Intent", "Intent success.");
+            }else {
+                // error Login activity (intent)
+                Log.i("Intent", "LoginactivityとのresultCodeがうまくいってません。");
+            }
+        } else{
+            Log.i("Intent","REQUEST_LOGIN is not match.");
+        }
     }
 
 

@@ -29,7 +29,7 @@ import butterknife.ButterKnife;
 
 public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
-    private static final int REQUEST_SIGNUP = 0;
+    private static final int REQUEST_SIGNUP = 1;
 
     // TODO:butterknife check!
     @Bind(R.id.input_name) EditText _nameText;
@@ -118,7 +118,9 @@ public class LoginActivity extends AppCompatActivity {
 
                 // TODO: Implement successful signup logic here
                 // By default we just finish the Activity and log them in automatically
-                Toast.makeText(getApplicationContext(), "Welcome", Toast.LENGTH_SHORT).show();
+                Intent mapActivity = new Intent(getApplicationContext(), MapsActivity1.class);
+                mapActivity.putExtra("Username", data.getStringExtra("username"));
+                setResult(RESULT_OK, mapActivity);
                 this.finish();
             }
         }
@@ -132,6 +134,9 @@ public class LoginActivity extends AppCompatActivity {
 
     public void onLoginSuccess() {
         _loginButton.setEnabled(true);
+        Intent mapActivity = new Intent(getApplicationContext(), MapsActivity1.class);
+        mapActivity.putExtra("Username", _nameText.getText().toString());
+        setResult(RESULT_OK, mapActivity);
         finish();
     }
 

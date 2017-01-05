@@ -108,9 +108,9 @@ public class SignupActivity extends AppCompatActivity {
 
     public void onSignupSuccess() {
         _signupButton.setEnabled(true);
-        Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
-        intent.putExtra("username", _nameText.getText().toString());
-        setResult(RESULT_OK, null);
+        Intent loginActivity = new Intent(getApplicationContext(), LoginActivity.class);
+        loginActivity.putExtra("username", _nameText.getText().toString());
+        setResult(RESULT_OK, loginActivity);
         finish();
     }
 
