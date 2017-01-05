@@ -98,9 +98,9 @@ public class MapsActivity1 extends AppCompatActivity
                     }
                 }
             });
+            Toast.makeText(getApplicationContext(), "Logout", Toast.LENGTH_SHORT).show();
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
-            Toast.makeText(getApplicationContext(), "Logout", Toast.LENGTH_SHORT).show();
             return true;
         }
 
