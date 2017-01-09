@@ -19,6 +19,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -41,14 +43,14 @@ import java.util.List;
 public class MapsActivity1 extends AppCompatActivity
         implements OnMapReadyCallback,
         GoogleMap.OnMyLocationButtonClickListener,
-        ActivityCompat.OnRequestPermissionsResultCallback {
+        ActivityCompat.OnRequestPermissionsResultCallback,
+        CompoundButton.OnCheckedChangeListener {
 
     protected static final String TAG = "LocationData";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private boolean mPermissionDenied = false;
     private GoogleMap mMap;
     private static final int REQUEST_LOGIN = 0;
-
 
 
     @Override
@@ -67,6 +69,9 @@ public class MapsActivity1 extends AppCompatActivity
         MapFragment mapFragment = (MapFragment) getFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        Switch _switch = (Switch) findViewById(R.id._switch);
+        _switch.setOnCheckedChangeListener(this);
     }
 
     @Override
@@ -168,6 +173,18 @@ public class MapsActivity1 extends AppCompatActivity
 
         mMap.setOnMyLocationButtonClickListener(this);
         enableMyLocation();
+    }
+
+    /** Tracking Location Switch. */
+    @Override
+    public void onCheckedChanged(CompoundButton buttonview, boolean isChecked) {
+        if (isChecked == true) {
+            Log.i("Switch", "Switch is checked ON");
+            Toast.makeText(getApplicationContext(), "Tracking Location ON", Toast.LENGTH_SHORT).show();
+        } else {
+            Log.i("Switch", "Switch is checked OFF");
+            Toast.makeText(getApplicationContext(), "Tracking Location OFF", Toast.LENGTH_SHORT).show();
+        }
     }
 
     /**
