@@ -23,8 +23,8 @@ import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.nifty.cloud.mb.core.DoneCallback;
@@ -50,12 +50,11 @@ public class MapsActivity1 extends AppCompatActivity
     private static final int REQUEST_LOGIN = 0;
 
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps1);
-        //経路検索
-        // test0();
 
         /** NCMBの初期化 APIキーの設定 */
         NCMB.initialize(this,"2ec74409180bbf60ac01acbf23e2198ab84118da7415c7c587b02ec7d7b8cf5a","0c8707e959d5c3e91020cadc8d99bfb1801b5c0d1585dd0894365333fe82c56d");
@@ -64,8 +63,8 @@ public class MapsActivity1 extends AppCompatActivity
         Intent intent = new Intent(this, LoginActivity.class);
         startActivityForResult(intent, REQUEST_LOGIN);
 
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+        // Obtain the MapFragment and get notified when the map is ready to be used.
+        MapFragment mapFragment = (MapFragment) getFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
     }
