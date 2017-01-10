@@ -19,44 +19,60 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.Switch;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.nifty.cloud.mb.core.DoneCallback;
-import com.nifty.cloud.mb.core.FindCallback;
 import com.nifty.cloud.mb.core.NCMB;
 import com.nifty.cloud.mb.core.NCMBException;
 import com.nifty.cloud.mb.core.NCMBObject;
-import com.nifty.cloud.mb.core.NCMBQuery;
 import com.nifty.cloud.mb.core.NCMBUser;
-
-import java.util.List;
 
 
 public class MapsActivity1 extends AppCompatActivity
         implements OnMapReadyCallback,
         GoogleMap.OnMyLocationButtonClickListener,
         ActivityCompat.OnRequestPermissionsResultCallback,
-        CompoundButton.OnCheckedChangeListener {
+        CompoundButton.OnCheckedChangeListener,
+        GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener,
+        LocationListener {
 
     protected static final String TAG = "LocationData";
+    protected static final String TAG2 = "LocationUpdates";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private boolean mPermissionDenied = false;
     private GoogleMap mMap;
+    protected GoogleApiClient mGoogleApiClient; // Provides the entry point to Google Play services.
     private static final int REQUEST_LOGIN = 0;
+    protected String Username;
 
+    /** Location Update Setting */
+    public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 5000;
+    public static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = 4000;
+    protected Location mCurrentLocation;
+    protected LocationRequest mLocationRequest;
+    public Boolean mRequestingLocationUpdates;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps1);
+
+        mRequestingLocationUpdates = false;
 
         /** NCMBの初期化 APIキーの設定 */
         NCMB.initialize(this,"2ec74409180bbf60ac01acbf23e2198ab84118da7415c7c587b02ec7d7b8cf5a","0c8707e959d5c3e91020cadc8d99bfb1801b5c0d1585dd0894365333fe82c56d");
@@ -72,6 +88,9 @@ public class MapsActivity1 extends AppCompatActivity
 
         Switch _switch = (Switch) findViewById(R.id._switch);
         _switch.setOnCheckedChangeListener(this);
+
+        //Create an instance of GoogleAPIClient
+        buildGoogleApiClint();
     }
 
     @Override
@@ -112,12 +131,25 @@ public class MapsActivity1 extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
+    /** Builds a GoogleApiClient and Request Location Settings.*/
+    protected synchronized void buildGoogleApiClint() {
+        Log.i(TAG2, "Building GoogleApiClient");
+        if (mGoogleApiClient == null) {
+            mGoogleApiClient = new GoogleApiClient.Builder(this)
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .addApi(LocationServices.API)
+                    .build();
+        }
+        createLocationRequest();
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_LOGIN) {
             if (resultCode == RESULT_OK) {
                 // Get Username
-                String Username = data.getStringExtra("Username");
+                Username = data.getStringExtra("Username");
                 Toast.makeText(getApplicationContext(), "Welcome " + Username, Toast.LENGTH_SHORT).show();
                 Log.i("Intent", "Intent success.");
             }else {
@@ -134,7 +166,7 @@ public class MapsActivity1 extends AppCompatActivity
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        /** データストアからデータの取得 */
+        /** データストアからデータの取得 *//*
         // クラスの選択
         NCMBQuery<NCMBObject> query = new NCMBQuery<>("Location");
 
@@ -164,7 +196,7 @@ public class MapsActivity1 extends AppCompatActivity
                     }
                 }
             }
-        });
+        });*/
 
 
         // Move the camera at Shinshu University.
@@ -181,9 +213,17 @@ public class MapsActivity1 extends AppCompatActivity
         if (isChecked == true) {
             Log.i("Switch", "Switch is checked ON");
             Toast.makeText(getApplicationContext(), "Tracking Location ON", Toast.LENGTH_SHORT).show();
+            if (!mRequestingLocationUpdates) {
+                mRequestingLocationUpdates = true;
+                startLocationUpdates();
+            }
         } else {
             Log.i("Switch", "Switch is checked OFF");
             Toast.makeText(getApplicationContext(), "Tracking Location OFF", Toast.LENGTH_SHORT).show();
+            if (mRequestingLocationUpdates) {
+                mRequestingLocationUpdates = false;
+                stopLocationUpdates();
+            }
         }
     }
 
@@ -240,6 +280,92 @@ public class MapsActivity1 extends AppCompatActivity
      */
     private void showMiddingPermissionError() {
         PermissionUtils.PermissionDeniedDialog.newInstance(true).show(getSupportFragmentManager(), "dialog");
+    }
+
+    @Override
+    public void onConnected(Bundle connectionHint) {
+        Log.i(TAG2, "Connected to GoogleApiClient");
+
+        if (mRequestingLocationUpdates) {
+            startLocationUpdates();
+        }
+    }
+
+    /** Request Location Settings */
+    protected void createLocationRequest() {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(UPDATE_INTERVAL_IN_MILLISECONDS);
+        mLocationRequest.setFastestInterval(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+    }
+
+    /** Request Location Updates from the FusedLocationApi */
+    protected void startLocationUpdates() {
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+        Log.i(TAG2, "StartLocationUpdates");
+    }
+
+    /** Removes Location Updates from the FusedLocationApi. */
+    protected void stopLocationUpdates() {
+        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+        Log.i(TAG2, "StopLocationUpdates");
+    }
+
+    /**  */
+
+    /** Callback that fires when the location changes. */
+    @Override
+    public void onLocationChanged(Location location) {
+        mCurrentLocation = location;
+
+        Toast.makeText(getApplicationContext(), "Location Updates", Toast.LENGTH_SHORT).show();
+        NCMBLocationUpdates();
+    }
+
+    /** Preserve Location Updates to NCMB datestore. */
+    private void NCMBLocationUpdates() {
+        Location geo = new Location("geo");
+        geo.setLatitude(mCurrentLocation.getLatitude());
+        geo.setLongitude(mCurrentLocation.getLongitude());
+
+        NCMBObject obj = new NCMBObject("LocationUpdates");
+        obj.put("name", Username);
+        obj.put("geo", geo);
+        obj.saveInBackground(new DoneCallback() {
+            @Override
+            public void done(NCMBException e) {
+                if (e != null) {
+                    // error
+                    Log.e("NCMB", "Failed preserve Location. Error:" + e.getMessage());
+                } else {
+                    // success
+                    Log.i("NCMB", "Success preserved Location");
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onConnectionSuspended(int cause) {
+        // The connection to Google Play services was lost for some reason.
+        // We call connect() to attempt to re-establish the connection.
+        Log.i(TAG2, "Connection suspended");
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult result) {
+        Log.i(TAG2, "Connection failed: ConnectionResult.getErrorCode() = " + result.getErrorCode());
+    }
+
+    protected void onStart() {
+        mGoogleApiClient.connect();
+        super.onStart();
+    }
+
+    protected void onStop() {
+        mGoogleApiClient.disconnect();
+        super.onStop();
     }
 
 } /** End */
