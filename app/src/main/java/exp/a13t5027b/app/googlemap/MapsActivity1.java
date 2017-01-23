@@ -19,10 +19,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.Switch;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -35,11 +33,22 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.nifty.cloud.mb.core.DoneCallback;
+import com.nifty.cloud.mb.core.FindCallback;
 import com.nifty.cloud.mb.core.NCMB;
+import com.nifty.cloud.mb.core.NCMBAcl;
 import com.nifty.cloud.mb.core.NCMBException;
 import com.nifty.cloud.mb.core.NCMBObject;
+import com.nifty.cloud.mb.core.NCMBQuery;
+import com.nifty.cloud.mb.core.NCMBRole;
+import com.nifty.cloud.mb.core.NCMBRoleService;
 import com.nifty.cloud.mb.core.NCMBUser;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 
 public class MapsActivity1 extends AppCompatActivity
@@ -59,6 +68,7 @@ public class MapsActivity1 extends AppCompatActivity
     protected GoogleApiClient mGoogleApiClient; // Provides the entry point to Google Play services.
     private static final int REQUEST_LOGIN = 0;
     protected String Username;
+    protected Marker marker;
 
     /** Location Update Setting */
     public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 5000;
@@ -66,6 +76,11 @@ public class MapsActivity1 extends AppCompatActivity
     protected Location mCurrentLocation;
     protected LocationRequest mLocationRequest;
     public Boolean mRequestingLocationUpdates;
+
+    /** Share Location */
+    protected Date[] updateDate;
+    protected Date[] lastDate;
+    protected String[] Userdata;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,6 +106,9 @@ public class MapsActivity1 extends AppCompatActivity
 
         //Create an instance of GoogleAPIClient
         buildGoogleApiClint();
+
+        /** Serch all User */
+        findUsers();
     }
 
     @Override
@@ -165,39 +183,6 @@ public class MapsActivity1 extends AppCompatActivity
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
-        /** データストアからデータの取得 *//*
-        // クラスの選択
-        NCMBQuery<NCMBObject> query = new NCMBQuery<>("Location");
-
-        // データストアの検索
-        query.findInBackground(new FindCallback<NCMBObject>() {
-            @Override
-            public void done(List<NCMBObject> results, NCMBException e) {
-                if (e != null) {
-                    // error ログによる表示
-                    Log.e("NCMB", "検索に失敗しました。エラー:" + e.getMessage());
-                } else {
-                    // success ログによる表示
-                    Log.i("NCMB", "検索に成功しました。");
-
-                    // for文による検索結果の処理(results)
-                    for (int i = 0, n = results.size(); i < n; i++) {
-                        NCMBObject o = results.get(i);
-                        Log.i(TAG, o.getString("name")); // ログの表示
-                        String name = o.getString("name"); // nameフィールドの取得
-                        Location geo = o.getGeolocation("geo"); // geoフィールドの取得
-
-                        // マーカーの設置
-                        LatLng marker = new LatLng(geo.getLatitude(),geo.getLongitude()); // 緯度経度のオブジェクト
-                        mMap.addMarker(new MarkerOptions()
-                            .position(marker)
-                            .title(name));
-                    }
-                }
-            }
-        });*/
-
 
         // Move the camera at Shinshu University.
         LatLng shinshuU = new LatLng(36.6308777,138.189517);
@@ -312,14 +297,53 @@ public class MapsActivity1 extends AppCompatActivity
     }
 
     /**  */
+    private void AddMarkerlocation() {
+        // クラスの選択
+        NCMBQuery<NCMBObject> query = new NCMBQuery<>("LocationUpdates");
+
+        query.whereLessThanOrEqualTo("createDate", updateDate);
+        query.whereGreaterThan("createDate", lastDate);
+        // データストアの検索
+        query.findInBackground(new FindCallback<NCMBObject>() {
+            @Override
+            public void done(List<NCMBObject> results, NCMBException e) {
+                if (e != null) {
+                    // error ログによる表示
+                    Log.e("NCMB", "検索に失敗しました。エラー:" + e.getMessage());
+                } else {
+                    // success ログによる表示
+                    Log.i("NCMB", "検索に成功しました。");
+
+                    // for文による検索結果の処理(results)
+                    for (int i = 0, n = results.size(); i < n; i++) {
+                        NCMBObject o = results.get(i);
+                        Log.i(TAG, o.getString("name")); // ログの表示
+                        String name = o.getString("name"); // nameフィールドの取得
+                        Location geo = o.getGeolocation("geo"); // geoフィールドの取得
+
+                        // マーカーの設置
+                        LatLng position = new LatLng(geo.getLatitude(),geo.getLongitude()); // 緯度経度のオブジェクト
+                        marker = mMap.addMarker(new MarkerOptions()
+                                .position(position)
+                                .title(name));
+                        marker.showInfoWindow();
+
+                        lastDate = updateDate;
+                    }
+                }
+            }
+        });
+    }
 
     /** Callback that fires when the location changes. */
     @Override
     public void onLocationChanged(Location location) {
         mCurrentLocation = location;
-
+        // TODO: updateDate = new Date();
+        marker.remove();
         Toast.makeText(getApplicationContext(), "Location Updates", Toast.LENGTH_SHORT).show();
         NCMBLocationUpdates();
+        AddMarkerlocation();
     }
 
     /** Preserve Location Updates to NCMB datestore. */
@@ -356,6 +380,36 @@ public class MapsActivity1 extends AppCompatActivity
     @Override
     public void onConnectionFailed(ConnectionResult result) {
         Log.i(TAG2, "Connection failed: ConnectionResult.getErrorCode() = " + result.getErrorCode());
+    }
+
+//    /** Share Location Updates */
+//    private void shareLocation() {
+//
+//    }
+
+    /** search all User */
+    private void findUsers() {
+        NCMBQuery<NCMBUser> users = NCMBUser.getQuery();
+
+        users.findInBackground(new FindCallback<NCMBUser>() {
+            @Override
+            public void done(List<NCMBUser> list, NCMBException e) {
+                if (e != null) {
+                    // error ログによる表示
+                    Log.e("Users", "検索に失敗しました。エラー:" + e.getMessage());
+                } else {
+                    // success ログによる表示
+                    Log.i("Users", "検索に成功しました。");
+
+                    // for文による検索結果の処理(results)
+                    for (int i = 0, n = list.size(); i < n; i++) {
+                        NCMBUser u = list.get(i);
+                        Log.i("Users", u.getUserName()); // ログの表示
+                        Userdata[i] = u.getUserName();
+                    }
+                }
+            }
+        });
     }
 
     protected void onStart() {
