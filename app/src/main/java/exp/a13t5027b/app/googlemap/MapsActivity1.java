@@ -32,18 +32,17 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.nifty.cloud.mb.core.DoneCallback;
 import com.nifty.cloud.mb.core.FindCallback;
 import com.nifty.cloud.mb.core.NCMB;
-import com.nifty.cloud.mb.core.NCMBAcl;
 import com.nifty.cloud.mb.core.NCMBException;
 import com.nifty.cloud.mb.core.NCMBObject;
 import com.nifty.cloud.mb.core.NCMBQuery;
-import com.nifty.cloud.mb.core.NCMBRole;
-import com.nifty.cloud.mb.core.NCMBRoleService;
 import com.nifty.cloud.mb.core.NCMBUser;
 
 import java.util.ArrayList;
@@ -78,9 +77,12 @@ public class MapsActivity1 extends AppCompatActivity
     public Boolean mRequestingLocationUpdates;
 
     /** Share Location */
-    protected Date[] updateDate;
-    protected Date[] lastDate;
-    protected String[] Userdata;
+    protected Date updateDate;
+    protected Date lastDate = null;
+    protected ArrayList<String> Userdata = new ArrayList<>();
+    protected ArrayList<Float> Color = new ArrayList<>();
+    protected String sharename;
+    protected LatLng sharelocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,6 +111,11 @@ public class MapsActivity1 extends AppCompatActivity
 
         /** Serch all User */
         findUsers();
+
+        Log.i("Userdata", "Userdata size is " + Userdata.size());
+
+        /** Add Marker all User */
+        AddMarkerlocation();
     }
 
     @Override
@@ -300,50 +307,58 @@ public class MapsActivity1 extends AppCompatActivity
     private void AddMarkerlocation() {
         // クラスの選択
         NCMBQuery<NCMBObject> query = new NCMBQuery<>("LocationUpdates");
+        query.addOrderByDescending("createDate");
+        for (int i = 0, n = Userdata.size(); i < n; i++) {
+            final int num = i;
+            // Userの限定
+            query.whereEqualTo("name", Userdata.get(num));
+            // データストアの検索
+            query.findInBackground(new FindCallback<NCMBObject>() {
+                @Override
+                public void done(List<NCMBObject> res, NCMBException e) {
+                    if (e != null) {
+                        //error
+                        Log.e("addMarker", e.getMessage());
+                    } else {
+                        //success
+                        for (int i = 0, n = res.size(); i < n; i++) {
+                            NCMBObject obj = res.get(i);
+                            String name = obj.getString("name"); // nameフィールドの取得
+                            Location geo = obj.getGeolocation("geo");
+                            Date date = obj.getCreateDate();
 
-        query.whereLessThanOrEqualTo("createDate", updateDate);
-        query.whereGreaterThan("createDate", lastDate);
-        // データストアの検索
-        query.findInBackground(new FindCallback<NCMBObject>() {
-            @Override
-            public void done(List<NCMBObject> results, NCMBException e) {
-                if (e != null) {
-                    // error ログによる表示
-                    Log.e("NCMB", "検索に失敗しました。エラー:" + e.getMessage());
-                } else {
-                    // success ログによる表示
-                    Log.i("NCMB", "検索に成功しました。");
-
-                    // for文による検索結果の処理(results)
-                    for (int i = 0, n = results.size(); i < n; i++) {
-                        NCMBObject o = results.get(i);
-                        Log.i(TAG, o.getString("name")); // ログの表示
-                        String name = o.getString("name"); // nameフィールドの取得
-                        Location geo = o.getGeolocation("geo"); // geoフィールドの取得
-
-                        // マーカーの設置
-                        LatLng position = new LatLng(geo.getLatitude(),geo.getLongitude()); // 緯度経度のオブジェクト
-                        marker = mMap.addMarker(new MarkerOptions()
-                                .position(position)
-                                .title(name));
-                        marker.showInfoWindow();
-
-                        lastDate = updateDate;
+                            // マーカーの設置
+                            if (i == 0) {
+                                LatLng pos = new LatLng(geo.getLatitude(), geo.getLongitude()); // 緯度経度のオブジェクト
+                                marker = mMap.addMarker(new MarkerOptions()
+                                        .position(pos)
+                                        .icon(BitmapDescriptorFactory.defaultMarker(Color.get(num)))
+                                        .title(name));
+                                marker.showInfoWindow();
+                                Log.i("addMarker", "name: " + name);
+                                Log.i("addMarker", pos.toString());
+                                Log.i("addMarker", "createDate: " + date.toString());
+                            }
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
+    }
+
+    private void UpdateMarkerLocation() {
+
     }
 
     /** Callback that fires when the location changes. */
     @Override
     public void onLocationChanged(Location location) {
         mCurrentLocation = location;
-        // TODO: updateDate = new Date();
-        marker.remove();
+        updateDate = new Date();
+
         Toast.makeText(getApplicationContext(), "Location Updates", Toast.LENGTH_SHORT).show();
         NCMBLocationUpdates();
-        AddMarkerlocation();
+        //AddMarkerlocation();
     }
 
     /** Preserve Location Updates to NCMB datestore. */
@@ -391,25 +406,18 @@ public class MapsActivity1 extends AppCompatActivity
     private void findUsers() {
         NCMBQuery<NCMBUser> users = NCMBUser.getQuery();
 
-        users.findInBackground(new FindCallback<NCMBUser>() {
-            @Override
-            public void done(List<NCMBUser> list, NCMBException e) {
-                if (e != null) {
-                    // error ログによる表示
-                    Log.e("Users", "検索に失敗しました。エラー:" + e.getMessage());
-                } else {
-                    // success ログによる表示
-                    Log.i("Users", "検索に成功しました。");
-
-                    // for文による検索結果の処理(results)
-                    for (int i = 0, n = list.size(); i < n; i++) {
-                        NCMBUser u = list.get(i);
-                        Log.i("Users", u.getUserName()); // ログの表示
-                        Userdata[i] = u.getUserName();
-                    }
-                }
+        try {
+            List<NCMBUser> list = users.find();
+            for (int i = 0, n = list.size(); i < n; i++) {
+                NCMBUser u = list.get(i);
+                Userdata.add(i, u.getUserName());
+                Color.add(i, (float) u.getLong("color"));
+                Log.i("Users", "UserData: " + Userdata.get(i));
             }
-        });
+            Log.i("Userdata", "Userdata size is " + Userdata.size());
+        } catch (NCMBException e) {
+            e.getStackTrace();
+        }
     }
 
     protected void onStart() {
