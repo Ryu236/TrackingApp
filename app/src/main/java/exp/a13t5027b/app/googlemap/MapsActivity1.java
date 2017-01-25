@@ -32,7 +32,6 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -48,6 +47,7 @@ import com.nifty.cloud.mb.core.NCMBUser;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 
 public class MapsActivity1 extends AppCompatActivity
@@ -78,9 +78,10 @@ public class MapsActivity1 extends AppCompatActivity
 
     /** Share Location */
     protected Date updateDate;
-    protected Date lastDate = null;
+    protected Date lastDate;
     protected ArrayList<String> Userdata = new ArrayList<>();
-    protected ArrayList<Float> Color = new ArrayList<>();
+    protected ArrayList<Float> color = new ArrayList<>();
+    protected ArrayList<Object> NowMarker = new ArrayList<>();
     protected String sharename;
     protected LatLng sharelocation;
 
@@ -113,9 +114,6 @@ public class MapsActivity1 extends AppCompatActivity
         findUsers();
 
         Log.i("Userdata", "Userdata size is " + Userdata.size());
-
-        /** Add Marker all User */
-        AddMarkerlocation();
     }
 
     @Override
@@ -197,6 +195,8 @@ public class MapsActivity1 extends AppCompatActivity
 
         mMap.setOnMyLocationButtonClickListener(this);
         enableMyLocation();
+
+        mMap.getUiSettings().setMapToolbarEnabled(false);
     }
 
     /** Tracking Location Switch. */
@@ -208,6 +208,8 @@ public class MapsActivity1 extends AppCompatActivity
             if (!mRequestingLocationUpdates) {
                 mRequestingLocationUpdates = true;
                 startLocationUpdates();
+                /** Add Marker all User */
+                AddMarkerlocation();
             }
         } else {
             Log.i("Switch", "Switch is checked OFF");
@@ -305,6 +307,8 @@ public class MapsActivity1 extends AppCompatActivity
 
     /**  */
     private void AddMarkerlocation() {
+        // マーカーが最後にデータストアを検索した時間
+        lastDate = new Date();
         // クラスの選択
         NCMBQuery<NCMBObject> query = new NCMBQuery<>("LocationUpdates");
         query.addOrderByDescending("createDate");
@@ -332,9 +336,14 @@ public class MapsActivity1 extends AppCompatActivity
                                 LatLng pos = new LatLng(geo.getLatitude(), geo.getLongitude()); // 緯度経度のオブジェクト
                                 marker = mMap.addMarker(new MarkerOptions()
                                         .position(pos)
-                                        .icon(BitmapDescriptorFactory.defaultMarker(Color.get(num)))
+                                        .icon(BitmapDescriptorFactory.defaultMarker(color.get(num) + 5))
                                         .title(name));
                                 marker.showInfoWindow();
+                                //Circleのお試し
+//                                Circle circle = mMap.addCircle(new CircleOptions()
+//                                                    .center(pos)
+//                                                    .radius(5)
+//                                                    .fillColor(Color.BLACK));
                                 Log.i("addMarker", "name: " + name);
                                 Log.i("addMarker", pos.toString());
                                 Log.i("addMarker", "createDate: " + date.toString());
@@ -347,7 +356,52 @@ public class MapsActivity1 extends AppCompatActivity
     }
 
     private void UpdateMarkerLocation() {
+        NCMBQuery<NCMBObject> query = new NCMBQuery<>("LocationUpdates");
+        //query.addOrderByAscending("createDate");
+        // lastDateから現在までに更新された位置情報に絞る
+        query.whereGreaterThanOrEqualTo("createDate", lastDate);
 
+        for (int i = 0, n = Userdata.size(); i < n; i++) {
+            // Userdataの配列番号:num
+            final int num = i;
+            query.whereEqualTo("name", Userdata.get(num));
+            // データストアの検索
+            query.findInBackground(new FindCallback<NCMBObject>() {
+                @Override
+                public void done(List<NCMBObject> res, NCMBException e) {
+                    if (e != null) {
+                        //error
+                        Log.e("UpdateMarker", e.getMessage());
+                    } else {
+                        //success
+                        for (int i = 0, n = res.size(); i < n; i++) {
+                            NCMBObject obj = res.get(i);
+                            String name = obj.getString("name"); // nameフィールドの取得
+                            Location geo = obj.getGeolocation("geo");
+                            Date date = obj.getCreateDate();
+
+                            // マーカーの設置 最新の位置情報
+                            LatLng pos = new LatLng(geo.getLatitude(), geo.getLongitude()); // 緯度経度のオブジェクト
+                            marker = mMap.addMarker(new MarkerOptions()
+                                    .position(pos)
+                                    .icon(BitmapDescriptorFactory.defaultMarker(color.get(num)))
+                                    .title(name));
+                            marker.showInfoWindow();
+                            //Circleのお試し
+//                                Circle circle = mMap.addCircle(new CircleOptions()
+//                                                    .center(pos)
+//                                                    .radius(5)
+//                                                    .fillColor(Color.BLACK));
+                            Log.i("updateMarker", "name: " + name);
+                            Log.i("updateMarker", pos.toString());
+                            Log.i("updateMarker", "createDate: " + date.toString());
+                        }
+                    }
+                }
+            });
+        }
+        // マーカーが最後にデータストアを検索した時間
+        lastDate = new Date();
     }
 
     /** Callback that fires when the location changes. */
@@ -358,7 +412,7 @@ public class MapsActivity1 extends AppCompatActivity
 
         Toast.makeText(getApplicationContext(), "Location Updates", Toast.LENGTH_SHORT).show();
         NCMBLocationUpdates();
-        //AddMarkerlocation();
+        UpdateMarkerLocation();
     }
 
     /** Preserve Location Updates to NCMB datestore. */
@@ -411,7 +465,7 @@ public class MapsActivity1 extends AppCompatActivity
             for (int i = 0, n = list.size(); i < n; i++) {
                 NCMBUser u = list.get(i);
                 Userdata.add(i, u.getUserName());
-                Color.add(i, (float) u.getLong("color"));
+                color.add(i, (float) u.getLong("color"));
                 Log.i("Users", "UserData: " + Userdata.get(i));
             }
             Log.i("Userdata", "Userdata size is " + Userdata.size());
