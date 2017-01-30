@@ -209,7 +209,7 @@ public class MapsActivity1 extends AppCompatActivity
                 mRequestingLocationUpdates = true;
                 startLocationUpdates();
                 /** Add Marker all User */
-                AddMarkerlocation();
+                //AddMarkerlocation();
             }
         } else {
             Log.i("Switch", "Switch is checked OFF");
@@ -310,7 +310,7 @@ public class MapsActivity1 extends AppCompatActivity
         // マーカーが最後にデータストアを検索した時間
         lastDate = new Date();
         // クラスの選択
-        NCMBQuery<NCMBObject> query = new NCMBQuery<>("LocationUpdates");
+        NCMBQuery<NCMBObject> query = new NCMBQuery<>("Experiment");
         query.addOrderByDescending("createDate");
         for (int i = 0, n = Userdata.size(); i < n; i++) {
             final int num = i;
@@ -356,7 +356,7 @@ public class MapsActivity1 extends AppCompatActivity
     }
 
     private void UpdateMarkerLocation() {
-        NCMBQuery<NCMBObject> query = new NCMBQuery<>("LocationUpdates");
+        NCMBQuery<NCMBObject> query = new NCMBQuery<>("Experiment");
         //query.addOrderByAscending("createDate");
         // lastDateから現在までに更新された位置情報に絞る
         query.whereGreaterThanOrEqualTo("createDate", lastDate);
@@ -421,7 +421,7 @@ public class MapsActivity1 extends AppCompatActivity
         geo.setLatitude(mCurrentLocation.getLatitude());
         geo.setLongitude(mCurrentLocation.getLongitude());
 
-        NCMBObject obj = new NCMBObject("LocationUpdates");
+        NCMBObject obj = new NCMBObject("Experiment");
         obj.put("name", Username);
         obj.put("geo", geo);
         obj.saveInBackground(new DoneCallback() {

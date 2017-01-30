@@ -6,10 +6,13 @@ android {
 
     defaultConfig {
         applicationId "exp.a13t5027b.app.googlemap"
-        minSdkVersion 21
+        minSdkVersion 15
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
+
+        // Enabling multidex support.
+        multiDexEnabled true;
     }
     buildTypes {
         release {
@@ -29,4 +32,6 @@ dependencies {
     // mBaaSb setting
     compile 'com.google.code.gson:gson:2.3.1'
     compile files('libs/NCMB.jar')
+    // multidex
+    compile 'com.android.support:multidex:1.0.0'
 }
