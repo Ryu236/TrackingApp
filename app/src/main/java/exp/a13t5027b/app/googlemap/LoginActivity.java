@@ -31,7 +31,6 @@ public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
     private static final int REQUEST_SIGNUP = 1;
 
-    // TODO:butterknife check!
     @Bind(R.id.input_name) EditText _nameText;
     @Bind(R.id.input_password) EditText _passwordText;
     @Bind(R.id.btn_login) Button _loginButton;
@@ -107,7 +106,6 @@ public class LoginActivity extends AppCompatActivity {
         } catch (NCMBException e) {
             e.printStackTrace();
         }
-
     }
 
 
@@ -115,9 +113,7 @@ public class LoginActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_SIGNUP) {
             if (resultCode == RESULT_OK) {
-
-                // TODO: Implement successful signup logic here
-                // By default we just finish the Activity and log them in automatically
+                // ユーザー名を取得
                 Intent mapActivity = new Intent(getApplicationContext(), MapsActivity1.class);
                 mapActivity.putExtra("Username", data.getStringExtra("username"));
                 setResult(RESULT_OK, mapActivity);

@@ -20,6 +20,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.nifty.cloud.mb.core.DoneCallback;
+import com.nifty.cloud.mb.core.NCMBAcl;
 import com.nifty.cloud.mb.core.NCMBException;
 import com.nifty.cloud.mb.core.NCMBUser;
 
@@ -82,6 +83,11 @@ public class SignupActivity extends AppCompatActivity {
         user.setUserName(name);
         //パスワードを設定
         user.setPassword(password);
+        //パーミッションの設定
+        NCMBAcl acl = new NCMBAcl();
+        acl.setPublicReadAccess(true);
+        acl.setPublicWriteAccess(true);
+        user.setAcl(acl);
         //設定したユーザ名とパスワードで会員登録を行う
         user.signUpInBackground(new DoneCallback() {
             @Override
@@ -108,6 +114,7 @@ public class SignupActivity extends AppCompatActivity {
 
     public void onSignupSuccess() {
         _signupButton.setEnabled(true);
+        // ユーザー名を取得
         Intent loginActivity = new Intent(getApplicationContext(), LoginActivity.class);
         loginActivity.putExtra("username", _nameText.getText().toString());
         setResult(RESULT_OK, loginActivity);
