@@ -90,7 +90,7 @@ public class MapsActivity1 extends AppCompatActivity
         mRequestingLocationUpdates = false;
 
         /** NCMBの初期化 APIキーの設定 */
-        NCMB.initialize(this,"2ec74409180bbf60ac01acbf23e2198ab84118da7415c7c587b02ec7d7b8cf5a","0c8707e959d5c3e91020cadc8d99bfb1801b5c0d1585dd0894365333fe82c56d");
+        NCMB.initialize(this,"ApplicationKey","ClientKey");
 
         /** Login action */
         Intent intent = new Intent(this, LoginActivity.class);
